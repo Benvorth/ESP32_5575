@@ -23,7 +23,7 @@ constexpr uint8_t CORE_TASK_PROCESS_BUFFER {1};
 static TaskHandle_t task_handle_wait_spi = 0;
 static TaskHandle_t task_handle_process_buffer = 0;
 
-uint32_t cycle = 0;
+uint32_t transactionNo = 0;
 volatile boolean cs_last = false;
 volatile boolean cs = false;
 
@@ -301,7 +301,9 @@ void task_process_buffer(void* pvParameters) {
 
             requestDataFromMaster_stage++;
 
-            if (requestDataFromMaster_stage == 1) {
+            if (requestDataFromMaster_stage == 0) {
+                set_tx_buffer(0xFF); // high = tell master slave is there
+            } else if (requestDataFromMaster_stage == 1) {
                 set_tx_buffer(slaveRadyCommand, sizeof(slaveRadyCommand)); // tell master to prepare for commands from slave
             } else if (requestDataFromMaster_stage < (NUM_REGISTERS_TO_READ + 2)) {
                 revolveReadRegisterCommand();
@@ -309,23 +311,16 @@ void task_process_buffer(void* pvParameters) {
                 revolveReadCoilCommand();
             } else {
                 requestDataFromMaster_stage = 0;
-                requestDataFromMaster = false;
-                lastDataRequestTime = millis(); // wait for pollDataDelay_ms until fetch the next time the same data 
+                lastDataRequestTime = millis(); // wait for pollDataDelay_ms until fetch the next time the same data
+                requestDataFromMaster = false; 
                 set_tx_buffer(0x00); // low = master can relax clock
             }
-        } else if (
-            // cycle > 5 && 
-            (millis() - lastDataRequestTime) > (pollDataDelay_ms)
-        ) {
-            requestDataFromMaster_stage = 0;
-            requestDataFromMaster = true;
-            set_tx_buffer(0xFF); // high = tell master slave is there
         } else {
             set_tx_buffer(0x00); // low = master can relax clock
         }
 
         slave.pop();
-        cycle++;
+        transactionNo++;
         
         // hand-over to wait-task
         xTaskNotifyGive(task_handle_wait_spi);
@@ -388,6 +383,9 @@ void setupWiFiServer() {
     // server.onNotFound(handle_NotFound);
     server.onNotFound(handle_NotFound);
     server.begin();
+
+    // set buffer for diagram to 0
+    memset(rk1Stell, 0, sizeof(rk1Stell));
 }
 
 void setupSPISlave () {
@@ -437,15 +435,9 @@ void setup() {
     while (!Serial)
     ; // wait for serial attach
 
-    Serial.printf("NUM_REGISTERS_TO_READ: %d\n", NUM_REGISTERS_TO_READ);
-    
-    memset(rk1Stell, 0, sizeof(rk1Stell));
-
     delay(10000);
 
     setupWiFiServer();
-
-    MODBUS_CRC16_v3(readCommand_crc, sizeof(readCommand_crc));
 
     setupSPISlave();
 }
@@ -457,12 +449,18 @@ void loop() {
     if (cs != cs_last) {
         cs_last = cs;
         if (!cs) {
-            Serial.printf("%d cycle: %d SS HIGH\n", micros(), cycle);
+            Serial.printf("%d transactionNo: %d SS HIGH\n", micros(), transactionNo);
         } else {            
-            Serial.printf("%d cycle: %d SS LOW\n", micros(), cycle);
+            Serial.printf("%d transactionNo: %d SS LOW\n", micros(), transactionNo);
         }        
     }
     */
+
+    if (!requestDataFromMaster && (millis() - lastDataRequestTime) > pollDataDelay_ms) {
+        requestDataFromMaster_stage = 0;
+        requestDataFromMaster = true;
+        Serial.printf("Begin new request at transaction-counter %d\n", transactionNo);
+    }
 }
 
 
