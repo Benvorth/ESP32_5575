@@ -1,3 +1,7 @@
+#include <AsyncElegantOTA.h>
+#include <elegantWebpage.h>
+#include <Hash.h>
+
 // https://github.com/hideakitai/ESP32SPISlave
 #include <ESP32SPISlave.h>
 #include <WiFi.h>
@@ -382,6 +386,10 @@ void setupWiFiServer() {
 
     // server.onNotFound(handle_NotFound);
     server.onNotFound(handle_NotFound);
+    
+    // OTA-Updates via http://esp32.local/update
+    AsyncElegantOTA.begin(&server); 
+    
     server.begin();
 
     // set buffer for diagram to 0
@@ -461,6 +469,8 @@ void loop() {
         requestDataFromMaster = true;
         Serial.printf("Begin new request at transaction-counter %d\n", transactionNo);
     }
+
+    AsyncElegantOTA.loop();
 }
 
 
