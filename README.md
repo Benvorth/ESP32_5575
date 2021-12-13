@@ -10,6 +10,10 @@ Install these libs:
 * https://github.com/hideakitai/ESP32SPISlave 
 * https://github.com/me-no-dev/ESPAsyncWebServer/
 * https://github.com/me-no-dev/AsyncTCP/
+* https://github.com/tzapu/WiFiManager/
+* ESPAsync_WiFiManager_Lite
+* ESP_DoubleResetDetector
+* https://github.com/ayushsharma82/AsyncElegantOTA
 
 ESP32-Wiring:
 
@@ -20,6 +24,12 @@ ESP32-Wiring:
 We use the SPI Slave Lib from https://github.com/hideakitai/ESP32SPISlave
 
 # WebServer
-ESPAsyncWebServer from https://github.com/me-no-dev/ESPAsyncWebServer/
+ESPAsyncWebServer from https://github.com/me-no-dev/ESPAsyncWebServer/ ()
+
+# WiFi Manager
+https://github.com/tzapu/WiFiManager/ (MIT-License)
+
+# Over-the-air updates (OTA)
+https://github.com/ayushsharma82/AsyncElegantOTA (MIT-License)
 
 
